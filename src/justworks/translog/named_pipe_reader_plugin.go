@@ -24,8 +24,8 @@ func (plugin *NamedPipeReaderPlugin) Configure(config map[string]string) {
     plugin.debug = true
   }
 
-  if len(config["filename"]) < 1 {
-    log.Fatalf("[%T] ERROR: missing configuration option 'filename'", plugin)
+  if len(config["source"]) < 1 {
+    log.Fatalf("[%T] ERROR: missing configuration option 'source'", plugin)
   }
 
   if len(config["check_interval"]) > 0 {
@@ -44,12 +44,12 @@ func (plugin *NamedPipeReaderPlugin) Configure(config map[string]string) {
 
 func (plugin *NamedPipeReaderPlugin) Start(c chan *Event) {
   config := plugin.config
-  source := fmt.Sprintf("pipe://%s", config["filename"])
+  source := fmt.Sprintf("pipe://%s", config["source"])
 
-  pipe, err := os.OpenFile(config["filename"], os.O_RDONLY, 0600)
+  pipe, err := os.OpenFile(config["source"], os.O_RDONLY, 0600)
 
   if err != nil {
-    log.Printf("[%T] failed to open named pipe %s", plugin, config["filename"])
+    log.Printf("[%T] failed to open named pipe %s", plugin, config["source"])
     return
   }
 

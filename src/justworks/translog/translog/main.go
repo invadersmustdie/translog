@@ -24,11 +24,11 @@ func CopyMap(src map[string]string) map[string]string {
 
 func createInputPlugin(name string) translog.InputPlugin {
   switch name {
-  case "FileReaderPlugin":
+  case "File":
     return new(translog.FileReaderPlugin)
-  case "NamedPipeReaderPlugin":
+  case "NamedPipe":
     return new(translog.NamedPipeReaderPlugin)
-  case "TcpReaderPlugin":
+  case "Tcp":
     return new(translog.TcpReaderPlugin)
   }
 
@@ -52,15 +52,15 @@ func createFilterPlugin(name string) translog.FilterPlugin {
 
 func createOutputPlugin(name string) translog.ProcessingPlugin {
   switch name {
-  case "StdoutWriterPlugin":
+  case "Stdout":
     return new(translog.StdoutWriterPlugin)
-  case "NamedPipeWriterPlugin":
+  case "NamedPipe":
     return new(translog.NamedPipeWriterPlugin)
-  case "StatsdPlugin":
+  case "Statsd":
     return new(translog.StatsdPlugin)
-  case "GelfWriterPlugin":
+  case "Gelf":
     return new(translog.GelfWriterPlugin)
-  case "NetworkSocketWriter":
+  case "NetworkSocket":
     return new(translog.NetworkSocketWriter)
   }
 

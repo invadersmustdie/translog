@@ -5,3 +5,5 @@
 
 - add File writer
 - refactor file + pipe reader/writer into one file
+
+- add module Alias -> input.FileReaderPlugin -> input.File

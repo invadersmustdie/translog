@@ -14,12 +14,12 @@ Goals:
 
 <pre>
 [shell1] $ wget TODO
-[shell1] $ echo "[input.FileReaderPlugin]
-filename=file0
+[shell1] $ echo "[input.File]
+source=file0
 
 [filter.KeyValueExtractor]
 
-[output.StdoutWriterPlugin]" > translog.conf
+[output.Stdout]" > translog.conf
 
 [shell1] $ chmod a+rx translog
 [shell1] $ ./translog -config demo.conf
@@ -57,12 +57,12 @@ $ ./bin/translog -h
 # Sample Configuration
 
 <pre>
-[input.FileReaderPlugin]
-filename=/var/log/nginx/access.log
+[input.File]
+source=/var/log/nginx/access.log
 
 [filter.KeyValueExtractor]
 
-[output.StatsdPlugin]
+[output.Statsd]
 host=metrics.local
 port=8125
 proto=udp
@@ -86,8 +86,8 @@ field.1.raw=test.nginx.response.%{RC}:1|c
    * 1x FileReaderPlugin
 
 <pre>
-[input.FileReaderPlugin]
-filename=tmp/source.file0
+[input.File]
+source=tmp/source.file0
 </pre>
 
 -> 52540 msg/sec
@@ -95,8 +95,8 @@ filename=tmp/source.file0
    * 1x FileReaderPlugin + 1x KeyValueFilter
 
 <pre>
-[input.FileReaderPlugin]
-filename=tmp/source.file0
+[input.File]
+source=tmp/source.file0
 
 [filter.KeyValueExtractor]
 </pre>
@@ -107,7 +107,7 @@ filename=tmp/source.file0
 
 <pre>
 [input.FileReaderPlugin]
-filename=tmp/source.file0
+source=tmp/source.file0
 
 [filter.KeyValueExtractor]
 
@@ -125,34 +125,42 @@ field.varnish_cluster=backend="[A-Z]+_([A-Z]+)_
 
 #### TcpReaderPlugin
 
+Reads raw message from tcp socket.
+
 **Example**
 
 <pre>
-[input.TcpReaderPlugin]
+[input.Tcp]
 port=8888
 </pre>
 
 #### FileReaderPlugin
 
+Reads messsages from file.
+
 **Example**
 
 <pre>
-[input.FileReaderPlugin]
-filename=tmp/source.file0
+[input.File]
+source=tmp/source.file0
 </pre>
 
 #### NamedPipeReaderPlugin
 
+Reads messsages from named pipe.
+
 **Example**
 
 <pre>
-[input.NamedPipeReaderPlugin]
-filename=tmp/source.pipe0
+[input.NamedPipe]
+source=tmp/source.pipe0
 </pre>
 
 ### Filter
 
-#### KeyValueFilter
+#### KeyValueExtractor
+
+Extracts key/value pairs from raw message.
 
 **Example**
 
@@ -175,6 +183,8 @@ field.visitorId=visitorId=([a-zA-Z0-9]+);
 
 #### DropEventFilter
 
+Drops event by matching field or raw message.
+
 **Example**
 
 <pre>
@@ -185,6 +195,12 @@ msg.match=^foo
 </pre>
 
 #### ModifyEventFilter
+
+Modifies fields for event.
+
+Currently supports:
+
+  * removing fields by name or pattern
 
 **Example**
 
@@ -199,19 +215,25 @@ field.remove.match=^cache
 
 #### StdoutWriterPlugin
 
+Writes internal structure of message to stdout.
+
 **Example**
 
 <pre>
-[output.StdoutWriterPlugin]
+[output.Stdout]
 # no configration
 </pre>
 
 #### GelfWriterPlugin
 
+Sends message in graylog2 format to given endpoint.
+
+Gelf format: https://github.com/Graylog2/graylog2-docs/wiki/GELF
+
 **Example**
 
 <pre>
-[output.GelfWriterPlugin]
+[output.Gelf]
 debug=true
 host=localhost
 port=12312
@@ -220,12 +242,16 @@ proto=tcp
 
 #### NamedPipeWriterPlugin
 
+TODO
+
 #### StatsdPlugin
+
+Sends metrics to statsd.
 
 **Example**
 
 <pre>
-[output.StatsdPlugin]
+[output.Statsd]
 debug=true
 host=foo.local
 port=8125
@@ -237,10 +263,12 @@ field.2.raw=test.nginx.%{foo}.%{bar}:1|c
 
 #### NetworkSocketWriter
 
+Writes raw message to network socket.
+
 **Example**
 
 <pre>
-[output.NetworkSocketWriter]
+[output.NetworkSocket]
 debug=true
 host=localhost
 port=9001
