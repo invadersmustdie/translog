@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/invadersmustdie/translog.png?branch=master)](https://travis-ci.org/invadersmustdie/translog)
+
 # General
 
 Lightweight log/event processor.
