@@ -77,7 +77,7 @@ func main() {
     flag.PrintDefaults()
   }
 
-  var opt_configFile = flag.String("config", "main.ini", "Configuration")
+  var opt_configFile = flag.String("config", "main.conf", "Configuration")
   var opt_cpus = flag.Int("cpus", runtime.NumCPU(), "Number of CPUs to utilize")
   var opt_reportInterval = flag.Int("report_interval", 10, "Interval in seconds")
   var opt_logfile = flag.String("logfile", "", "Logfile")
