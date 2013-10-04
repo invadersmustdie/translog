@@ -9,6 +9,9 @@ import (
   "runtime"
 )
 
+const APP_VERSION = "0.1.0"
+const APP_NAME = "translog"
+
 type Plugin interface {
   Configure(config map[string]string)
 }
@@ -69,6 +72,11 @@ func createOutputPlugin(name string) translog.ProcessingPlugin {
 }
 
 func main() {
+  flag.Usage = func() {
+    fmt.Fprintf(os.Stderr, "Usage of %s (%s):\n", APP_NAME, APP_VERSION)
+    flag.PrintDefaults()
+  }
+
   var opt_configFile = flag.String("config", "main.ini", "Configuration")
   var opt_cpus = flag.Int("cpus", runtime.NumCPU(), "Number of CPUs to utilize")
   var opt_reportInterval = flag.Int("report_interval", 10, "Interval in seconds")
