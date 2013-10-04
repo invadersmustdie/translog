@@ -2,6 +2,7 @@ package main
 
 import (
   "flag"
+  "fmt"
   "justworks/translog"
   "log"
   "os"
@@ -72,6 +73,7 @@ func main() {
   var opt_cpus = flag.Int("cpus", runtime.NumCPU(), "Number of CPUs to utilize")
   var opt_reportInterval = flag.Int("report_interval", 10, "Interval in seconds")
   var opt_logfile = flag.String("logfile", "", "Logfile")
+  var opt_pidfile = flag.String("pidfile", "", "Pidfile")
 
   flag.Parse()
 
@@ -87,6 +89,17 @@ func main() {
     }
 
     log.SetOutput(log_file)
+  }
+
+  if len(*opt_pidfile) > 0 {
+    pid_file, err := os.OpenFile(*opt_pidfile, os.O_WRONLY|os.O_CREATE, 0666)
+
+    if err != nil {
+      log.Fatal("Unable to write pidfile %s (%s)", *opt_pidfile, err)
+    }
+
+    pid_file.WriteString(fmt.Sprintf("%d\n", os.Getpid()))
+    pid_file.Close()
   }
 
   // *** configure pipeline
