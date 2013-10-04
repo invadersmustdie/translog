@@ -7,3 +7,6 @@
 - refactor file + pipe reader/writer into one file
 
 - add module Alias -> input.FileReaderPlugin -> input.File
+
+- write pidfile
+- add travic ci
