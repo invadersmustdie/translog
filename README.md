@@ -7,8 +7,15 @@ Lightweight log/event processor.
 Goals:
 
   * fast
-  * easy to deploy, zero dependencies
-  * easy configuration
+  * easy to deploy
+  * simple configuration
+
+Concept:
+
+The underlying idea is a very simple concept that is based on pipes and filters. An event get registered by an input, put through couple of filter and in the end published by an output.
+
+![Blue Print - Event Pipeline](doc/event_pipeline.png "Blueprint - Event Pipeline")
+
 
 ## Getting started
 
@@ -78,16 +85,19 @@ field.0.raw=test.nginx.runtime:%{runtime}|ms
 field.1.raw=test.nginx.response.%{RC}:1|c
 </pre>
 
+![Example Pipeline](doc/event_pipeline_example.png "Example")
+
+
 # FAQ
 
-  Q: Why not using logstash?
-  A: First of all, logstash is awesome. It's the tool of choice if you want to do enhanced log/event processing. translog does not intend to replace logstash at all. It just provides a lite alternative if you have want to have real simple log processing.
+  <b>Q:</b> Why not using logstash?  
+  <b>A:</b> First of all, logstash is awesome. It's the tool of choice if you want to do enhanced log/event processing. Translog does not intend to replace logstash at all. It just provides a lite alternative if you have want to have real simple log processing.
 
-  Q: How about more plugins for translog?
-  A: As translog tries to keep the number of dependencies down (to zero) I'm really careful about adding new plugins. If you need to work redis, elasticsearch, ... use logstash.
+  <b>Q:</b> How about more plugins for translog?  
+  <b>A:</b> As translog tries to keep the number of dependencies down (to zero) I'm really careful about adding new plugins. If you need to work redis, elasticsearch, ... use logstash.
 
-  Q: What's throughput can it handle?
-  A: There is no real answer to this question because it depends on the filter and configuration given. In general you will see a drop in througput when using complex regex patterns.
+  <b>Q:</b> What's throughput can it handle?  
+  <b>A:</b> There is no real answer to this question because it depends on the filter and configuration given. In general you will see a drop in througput when using complex regex patterns.
 
   On my local box (MBP2012 2.7GHz 8GB SSD) (-cpus=1) achieved the following numbers:
 
