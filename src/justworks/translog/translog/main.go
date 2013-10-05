@@ -90,7 +90,7 @@ func main() {
   }
 
   if len(*opt_logfile) > 0 {
-    log_file, err := os.OpenFile(*opt_logfile, os.O_WRONLY|os.O_CREATE, 0666)
+    log_file, err := os.OpenFile(*opt_logfile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 
     if err != nil {
       log.Fatal("Unable to open logfile %s (%s)", *opt_logfile, err)
