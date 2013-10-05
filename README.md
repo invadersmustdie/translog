@@ -12,16 +12,22 @@ Goals:
 
 ## Getting started
 
-### Prebuild binaries (TODO)
+### Prebuilt binaries
+
+  * [Linux x86_64](http://dirtyhack.net/d/translog/v0.1.0/translog.linux-x86_64)
+  * [Mac OSX x86_64](http://dirtyhack.net/d/translog/v0.1.0/translog.osx-x86_64)
 
 <pre>
-[shell1] $ wget TODO
-[shell1] $ echo "[input.File]
+[shell1] $ wget http://dirtyhack.net/d/translog/v0.1.0/translog.linux-x86_64 -O translog
+[shell1] $ chmod +x translog
+[shell1] $ echo "
+<b>[input.File]
 source=file0
 
 [filter.KeyValueExtractor]
 
-[output.Stdout]" > translog.conf
+[output.Stdout]</b>
+" > translog.conf
 
 [shell1] $ chmod a+rx translog
 [shell1] $ ./translog -config demo.conf
