@@ -94,7 +94,7 @@ field.1.raw=test.nginx.response.%{RC}:1|c
   <b>A:</b> First of all, logstash is awesome. It's the tool of choice if you want to do enhanced log/event processing. Translog does not intend to replace logstash at all. It just provides a lite alternative if you have want to have real simple log processing.
 
   <b>Q:</b> How about more plugins for translog?  
-  <b>A:</b> As translog tries to keep the number of dependencies down (to zero) I'm really careful about adding new plugins. If you need to work redis, elasticsearch, ... use logstash.
+  <b>A:</b> As translog tries to keep the number of dependencies down (to zero) I'm really careful about adding new plugins. If you need to work with redis, elasticsearch, ... use logstash.
 
   <b>Q:</b> What's throughput can it handle?  
   <b>A:</b> There is no real answer to this question because it depends on the filter and configuration given. In general you will see a drop in througput when using complex regex patterns.
