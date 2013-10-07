@@ -15,6 +15,8 @@ type FileReaderPlugin struct {
   rescan_interval int
 }
 
+const ERROR_OCCUR_LIMIT = 100
+
 func (plugin *FileReaderPlugin) Configure(config map[string]string) {
   plugin.config = config
 
@@ -33,11 +35,23 @@ func (plugin *FileReaderPlugin) Start(c chan *Event) {
   config := plugin.config
   source := fmt.Sprintf("file://%s", config["source"])
 
+  error_open_count := 0
+  error_read_count := 0
+
   for {
     file, err := os.OpenFile(config["source"], os.O_RDONLY, 0600)
 
     if err != nil {
-      log.Printf("[%T] ERROR: failed to open file %s (%s)", plugin, config["source"], err)
+      error_open_count += 1
+
+      if error_open_count == 1 || error_open_count >= ERROR_OCCUR_LIMIT {
+        log.Printf("[%T] ERROR: failed to open file %s (error='%s') (this message occured %d times)", plugin, config["source"], err, error_open_count)
+      }
+
+      if error_open_count >= ERROR_OCCUR_LIMIT {
+        error_open_count = 1
+      }
+
       time.Sleep(time.Duration(plugin.rescan_interval) * time.Second)
       continue
     }
@@ -67,7 +81,17 @@ func (plugin *FileReaderPlugin) Start(c chan *Event) {
           n, err := file.Read(rbuf)
 
           if err != nil {
-            log.Printf("[%T] ERROR: failed reading %s (new_bytes=%d, n=%d)", plugin, config["source"], new_bytes, n)
+            error_read_count += 1
+
+            if error_read_count == 1 || error_read_count >= ERROR_OCCUR_LIMIT {
+              log.Printf("[%T] ERROR: failed reading %s (new_bytes=%d, n=%d) error='%s' (this message occured %d times)", plugin, config["source"], new_bytes, n, err, error_read_count)
+            }
+
+            if error_read_count >= ERROR_OCCUR_LIMIT {
+              error_read_count = 1
+            }
+
+            time.Sleep(time.Duration(plugin.rescan_interval) * time.Second)
             continue
           }
 
