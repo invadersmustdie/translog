@@ -12,7 +12,7 @@ Goals:
 
 Concept:
 
-The underlying idea is a very simple concept that is based on pipes and filters. An event get registered by an input, put through couple of filter and in the end published by an output.
+The underlying idea is a very simple concept that is based on pipes and filters. An event gets registered by an input, put through a couple of filters and in the end is published by an output.
 
 ![Blue Print - Event Pipeline](doc/event_pipeline.png "Blueprint - Event Pipeline")
 
@@ -90,16 +90,16 @@ field.1.raw=test.nginx.response.%{RC}:1|c
 
 # FAQ
 
-  <b>Q:</b> Why not using logstash?  
-  <b>A:</b> First of all, logstash is awesome. It's the tool of choice if you want to do enhanced log/event processing. Translog does not intend to replace logstash at all. It just provides a lite alternative if you have want to have real simple log processing.
+  <b>Q:</b> Why not use logstash?  
+  <b>A:</b> First of all, logstash is awesome. It's the tool of choice if you want to do enhanced log/event processing. Translog does not intend to replace logstash at all. It just provides a lite alternative if you want to have real simple log processing.
 
   <b>Q:</b> How about more plugins for translog?  
   <b>A:</b> As translog tries to keep the number of dependencies down (to zero) I'm really careful about adding new plugins. If you need to work with redis, elasticsearch, ... use logstash.
 
-  <b>Q:</b> What's throughput can it handle?  
-  <b>A:</b> There is no real answer to this question because it depends on the filter and configuration given. In general you will see a drop in througput when using complex regex patterns.
+  <b>Q:</b> What throughput can it handle?  
+  <b>A:</b> There is no real answer to this question because it depends on the filters and configuration given. In general you will see a drop in throughput when using complex regex patterns.
 
-  On my local box (MBP2012 2.7GHz 8GB SSD) (-cpus=1) achieved the following numbers:
+  On my local box (MBP2012 2.7GHz 8GB SSD) (-cpus=1) it achieved the following numbers:
 
    * 1x FileReaderPlugin
 
@@ -143,7 +143,7 @@ field.varnish_cluster=backend="[A-Z]+_([A-Z]+)_
 
 #### TcpReaderPlugin
 
-Reads raw message from tcp socket.
+Reads raw messages from tcp socket.
 
 **Example**
 
@@ -189,7 +189,7 @@ Extracts key/value pairs from raw message.
 
 #### FieldExtractor
 
-Extracts value from raw message and adds it event. Regex pattern named in first group (parenthesis) will be used.
+Extracts value from raw message and adds it to event. Regex pattern named in first group (parenthesis) will be used.
 
 **Example**
 
