@@ -21,8 +21,8 @@ The underlying idea is a very simple concept that is based on pipes and filters.
 
 ### Prebuilt binaries
 
-  * [Linux x86_64](http://dirtyhack.net/d/translog/lastest/translog.linux-x86_64)
-  * [Mac OSX x86_64](http://dirtyhack.net/d/translog/lastest/translog.osx-x86_64)
+  * [Linux x86_64](http://dirtyhack.net/d/translog/latest/translog.linux-x86_64)
+  * [Mac OSX x86_64](http://dirtyhack.net/d/translog/latest/translog.osx-x86_64)
 
 <pre>
 [shell1] $ wget http://dirtyhack.net/d/translog/latest/translog.linux-x86_64 -O translog
