@@ -13,9 +13,11 @@ type FileReaderPlugin struct {
   config          map[string]string
   debug           bool
   rescan_interval int
+  _last_error_msg     string
+  _last_error_cnt     int
 }
 
-const ERROR_OCCUR_LIMIT = 100
+const ERROR_OCCUR_LIMIT = 30
 
 func (plugin *FileReaderPlugin) Configure(config map[string]string) {
   plugin.config = config
@@ -25,38 +27,57 @@ func (plugin *FileReaderPlugin) Configure(config map[string]string) {
   }
 
   if len(config["source"]) < 1 {
-    log.Fatalf("[%T] ERROR: missing configuration option 'source'", plugin)
+    log.Fatalf("[%T] err='missing configuration option <source>'", plugin)
   }
 
   plugin.rescan_interval = 2
+}
+
+func (plugin *FileReaderPlugin) logError2(stage string, err string) {
+  err_s := fmt.Sprintf("%s|%s", stage, err)
+
+  if plugin._last_error_msg != err_s {
+    plugin._last_error_msg = err_s
+    plugin._last_error_cnt = 0
+  }
+
+  plugin._last_error_cnt += 1
+
+  if plugin._last_error_cnt == 1 || plugin._last_error_cnt >= ERROR_OCCUR_LIMIT {
+    log.Printf("2 [%T] stage='%s' source='%s' err='%s' occurence=%d",
+      plugin,
+      stage,
+      plugin.config["source"],
+      err,
+      plugin._last_error_cnt)
+  }
+
+  if plugin._last_error_cnt >= ERROR_OCCUR_LIMIT {
+    plugin._last_error_cnt = 1
+  }
 }
 
 func (plugin *FileReaderPlugin) Start(c chan *Event) {
   config := plugin.config
   source := fmt.Sprintf("file://%s", config["source"])
 
-  error_open_count := 0
-  error_read_count := 0
-
   for {
     file, err := os.OpenFile(config["source"], os.O_RDONLY, 0600)
 
     if err != nil {
-      error_open_count += 1
-
-      if error_open_count == 1 || error_open_count >= ERROR_OCCUR_LIMIT {
-        log.Printf("[%T] ERROR: failed to open file %s (error='%s') (this message occured %d times)", plugin, config["source"], err, error_open_count)
-      }
-
-      if error_open_count >= ERROR_OCCUR_LIMIT {
-        error_open_count = 1
-      }
-
+      plugin.logError2("open", err.Error())
       time.Sleep(time.Duration(plugin.rescan_interval) * time.Second)
       continue
     }
 
-    stat, _ := os.Stat(config["source"])
+    stat, err := os.Stat(config["source"])
+
+    if err != nil {
+      plugin.logError2("statAfterOpen", err.Error())
+      time.Sleep(time.Duration(plugin.rescan_interval) * time.Second)
+      continue
+    }
+
     prev_file_size := stat.Size()
 
     // jump to end of file
@@ -65,7 +86,14 @@ func (plugin *FileReaderPlugin) Start(c chan *Event) {
     buf := bytes.NewBufferString("")
 
     for {
-      stat, _ := os.Stat(config["source"])
+      stat, err := os.Stat(config["source"])
+
+      if err != nil {
+        plugin.logError2("read", err.Error())
+        time.Sleep(time.Duration(plugin.rescan_interval) * time.Second)
+        break
+      }
+
       new_bytes := stat.Size() - prev_file_size
 
       if plugin.debug {
@@ -78,19 +106,10 @@ func (plugin *FileReaderPlugin) Start(c chan *Event) {
       } else {
         if new_bytes != 0 {
           rbuf := make([]byte, new_bytes)
-          n, err := file.Read(rbuf)
+          _, err := file.Read(rbuf)
 
           if err != nil {
-            error_read_count += 1
-
-            if error_read_count == 1 || error_read_count >= ERROR_OCCUR_LIMIT {
-              log.Printf("[%T] ERROR: failed reading %s (new_bytes=%d, n=%d) error='%s' (this message occured %d times)", plugin, config["source"], new_bytes, n, err, error_read_count)
-            }
-
-            if error_read_count >= ERROR_OCCUR_LIMIT {
-              error_read_count = 1
-            }
-
+            plugin.logError2("readbuf", err.Error())
             time.Sleep(time.Duration(plugin.rescan_interval) * time.Second)
             continue
           }
@@ -129,8 +148,15 @@ func (plugin *FileReaderPlugin) Start(c chan *Event) {
       }
 
       prev_file_size = stat.Size()
-      stat, _ = os.Stat(config["source"])
+      stat, err = os.Stat(config["source"])
 
+      if err != nil {
+        plugin.logError2("stat2", err.Error())
+        time.Sleep(time.Duration(plugin.rescan_interval) * time.Second)
+        continue
+      }
+
+      // nothing has changed
       if stat.Size() == prev_file_size {
         time.Sleep(time.Duration(plugin.rescan_interval) * time.Second)
       }
