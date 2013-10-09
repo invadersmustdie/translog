@@ -3,3 +3,4 @@ local
 pkg
 tmp
 src/github.com
+src/justworks/translog/translog/version.go
