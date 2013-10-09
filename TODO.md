@@ -1,6 +1,18 @@
+## general
+
+- add profiling option
 - let plugin.Configure return err
+- find a way to avoid deduplicated events in internal logger
 
-- documentation
+## input.File + input.NamedPipe
 
-- add File writer
-- refactor file + pipe reader/writer into one file
+- extract common functionality
+
+## output.File
+
+- implement plugin
+
+## output.Graphite
+
+- implement plugin
+- implement metrics filter
