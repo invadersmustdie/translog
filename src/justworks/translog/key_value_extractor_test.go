@@ -23,6 +23,18 @@ func Test_KeyValueExtractor_ParseMessage(t *testing.T) {
   assert.Equal(t, "HIT", fields["cache_hit"])
 }
 
+func Test_KeyValueExtractor_MergeExistingFields(t *testing.T) {
+  e := CreateEvent("test")
+  e.SetRawMessage("fred=wilma")
+  e.Fields["barney"] = "betty"
+
+  filter := new(KeyValueExtractor)
+
+  filter.ProcessEvent(e)
+
+  assert.Equal(t, 2, len(e.Fields))
+}
+
 func BenchmarkKeyValueExtraction(b *testing.B) {
   for i := 0; i < b.N; i++ {
     e := CreateEvent("test")

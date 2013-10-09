@@ -16,7 +16,7 @@ func (filter *KeyValueExtractor) Configure(config map[string]string) {
 }
 
 func (filter *KeyValueExtractor) ProcessEvent(e *Event) {
-  e.Fields = filter.ExtractKeyValuePairs(e)
+  e.Fields = MergeMap(filter.ExtractKeyValuePairs(e), e.Fields)
 }
 
 func (filter *KeyValueExtractor) ExtractKeyValuePairs(e *Event) map[string]string {
