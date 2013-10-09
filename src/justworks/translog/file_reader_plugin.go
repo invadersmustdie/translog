@@ -13,8 +13,8 @@ type FileReaderPlugin struct {
   config          map[string]string
   debug           bool
   rescan_interval int
-  _last_error_msg     string
-  _last_error_cnt     int
+  _last_error_msg string
+  _last_error_cnt int
 }
 
 const ERROR_OCCUR_LIMIT = 30
