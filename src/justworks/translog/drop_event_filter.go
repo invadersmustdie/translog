@@ -7,9 +7,10 @@ import (
 )
 
 type DropEventFilter struct {
-  fieldMatches map[string]regexp.Regexp
-  msgMatch     regexp.Regexp
-  debug        bool
+  fieldMatches       map[string]regexp.Regexp
+  msgMatch           regexp.Regexp
+  msgMatchIsNegative bool
+  debug              bool
 }
 
 func (filter *DropEventFilter) Configure(config map[string]string) {
@@ -44,7 +45,15 @@ func (filter *DropEventFilter) Configure(config map[string]string) {
   }
 
   if len(config["msg.match"]) > 0 {
-    re, err := regexp.Compile(config["msg.match"])
+    pattern := config["msg.match"]
+
+    if strings.HasPrefix(pattern, "!") {
+      log.Printf("[%T] found '!' prefix, changing to negative match", filter)
+      filter.msgMatchIsNegative = true
+      pattern = strings.Replace(pattern, "!", "", 1)
+    }
+
+    re, err := regexp.Compile(pattern)
 
     if err != nil {
       log.Printf("[%T] failed compiling regex for msg.match (regex=%s) (%s)", filter, config["msg.match"], err)
@@ -72,7 +81,9 @@ func (filter *DropEventFilter) ProcessEvent(e *Event) {
   }
 
   if len(filter.msgMatch.String()) > 0 {
-    if filter.msgMatch.MatchString(e.RawMessage) {
+    hasMatch := filter.msgMatch.MatchString(e.RawMessage)
+
+    if (hasMatch && !filter.msgMatchIsNegative) || (!hasMatch && filter.msgMatchIsNegative) {
       log.Printf("[%T] dropping event because raw message matches %s", filter, filter.msgMatch.String())
       e.KeepEvent = false
       return

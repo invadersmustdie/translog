@@ -212,6 +212,15 @@ field.direction=c
 msg.match=^foo
 </pre>
 
+msg.match also support inverted behaviour, this means allowing patterns insteads of permitting them. This can be achieved by putting a '!' in front of the pattern.
+
+**Example**
+
+<pre>
+[filter.DropEventFilter]
+msg.match=!^foo
+</pre>
+
 #### ModifyEventFilter
 
 Modifies fields for event.
