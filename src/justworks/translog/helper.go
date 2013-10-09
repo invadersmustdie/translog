@@ -52,3 +52,14 @@ func FieldsWithReplacedPlaceholders(e *Event, placeholders []string, caller stri
 
   return metrics
 }
+
+/* m1 overwrites m2 */
+func MergeMap(m1 map[string]string, m2 map[string]string) map[string]string {
+  for k, v := range m2 {
+    if len(m1[k]) == 0 {
+      m1[k] = v
+    }
+  }
+
+  return m1
+}

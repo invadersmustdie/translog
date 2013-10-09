@@ -51,3 +51,53 @@ func Test_FieldsWithReplacedPlaceholders_withNoPlaceholder(t *testing.T) {
 
   assert.Equal(t, 0, len(result_list))
 }
+
+func Test_Helper_MergeMap_Simple(t *testing.T) {
+  m1 := map[string]string{
+    "fred": "wilma",
+  }
+
+  m2 := map[string]string{
+    "barney": "betty",
+  }
+
+  result := MergeMap(m1, m2)
+
+  assert.Equal(t, 2, len(result))
+  assert.Equal(t, "wilma", result["fred"])
+  assert.Equal(t, "betty", result["barney"])
+}
+
+func Test_Helper_MergeMap_ConflictingKey_in_Source(t *testing.T) {
+  m1 := map[string]string{
+    "fred":   "wilma",
+    "barney": "betty",
+  }
+
+  m2 := map[string]string{
+    "barney": "not",
+  }
+
+  result := MergeMap(m1, m2)
+
+  assert.Equal(t, 2, len(result))
+  assert.Equal(t, "wilma", result["fred"])
+  assert.Equal(t, "betty", result["barney"])
+}
+
+func Test_Helper_MergeMap_ConflictingKey_in_Target(t *testing.T) {
+  m1 := map[string]string{
+    "fred": "wilma",
+  }
+
+  m2 := map[string]string{
+    "barney": "betty",
+    "fred":   "not",
+  }
+
+  result := MergeMap(m1, m2)
+
+  assert.Equal(t, 2, len(result))
+  assert.Equal(t, "wilma", result["fred"])
+  assert.Equal(t, "betty", result["barney"])
+}
