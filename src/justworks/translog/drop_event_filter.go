@@ -73,7 +73,9 @@ func (filter *DropEventFilter) ProcessEvent(e *Event) {
     }
 
     if fieldPattern.MatchString(fieldValue) {
-      log.Printf("[%T] dropping event because value %s of field %s matches %s", filter, fieldValue, fieldName, fieldPattern)
+      if filter.debug {
+        log.Printf("[%T] dropping event because value %s of field %s matches %s", filter, fieldValue, fieldName, fieldPattern)
+      }
 
       e.KeepEvent = false
       return
@@ -84,7 +86,9 @@ func (filter *DropEventFilter) ProcessEvent(e *Event) {
     hasMatch := filter.msgMatch.MatchString(e.RawMessage)
 
     if (hasMatch && !filter.msgMatchIsNegative) || (!hasMatch && filter.msgMatchIsNegative) {
-      log.Printf("[%T] dropping event because raw message matches %s", filter, filter.msgMatch.String())
+      if filter.debug {
+        log.Printf("[%T] dropping event because raw message matches %s", filter, filter.msgMatch.String())
+      }
       e.KeepEvent = false
       return
     }
