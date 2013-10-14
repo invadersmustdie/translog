@@ -283,7 +283,7 @@ debug=true
 host=foo.local
 port=8125
 proto=udp
-field.0.raw=test.nginx.runtime:%{runtime}|s
+field.0.raw=test.nginx.runtime:%{runtime}|ms
 field.1.raw=test.nginx.response.%{RC}:1|c
 field.2.raw=test.nginx.%{foo}.%{bar}:1|c
 </pre>
