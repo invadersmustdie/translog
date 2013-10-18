@@ -20,7 +20,7 @@ func (plugin *NamedPipeWriterPlugin) Configure(config map[string]string) {
   }
 
   if len(config["filename"]) < 1 {
-    log.Printf("[%T] ERROR: missing configuration option 'filename'", plugin)
+    log.Fatalf("[%T] ERROR: missing configuration option 'filename'", plugin)
   }
 }
 
@@ -36,8 +36,8 @@ func (plugin *NamedPipeWriterPlugin) ProcessEvent(event *Event) {
     }
   }
 
-  if stat.Mode() != os.ModeNamedPipe {
-    log.Printf("[%T] %s is not a named pipe", plugin, config["filename"])
+  if (stat.Mode() & os.ModeNamedPipe) != os.ModeNamedPipe {
+    log.Fatalf("[%T] %s is not a named pipe (stat.Mode=%s)", plugin, config["filename"], stat.Mode())
   }
 
   /* segfault here - dooh */
@@ -45,17 +45,16 @@ func (plugin *NamedPipeWriterPlugin) ProcessEvent(event *Event) {
   defer pipe.Close()
 
   if err != nil {
-    log.Fatal(fmt.Sprintf("Failed opening named pipe %s (%s)\n", config["filename"], err))
+    log.Fatalf(fmt.Sprintf("[%T] Failed opening named pipe %s (%s)\n", plugin, config["filename"], err))
   }
 
-  fmt.Printf("Start writing\n")
-  n, err := pipe.WriteString(event.RawMessage)
+  n, err := pipe.WriteString(fmt.Sprintf("%s\n", event.RawMessage))
 
   if err != nil {
     log.Printf(fmt.Sprintf("[%T] Failed writing to named pipe %s (%s)\n", plugin, config["filename"], err))
   }
 
-  fmt.Printf("wrote %d bytes\n", n)
-
-  fmt.Printf("Done writing\n")
+  if plugin.debug {
+    log.Printf("[%T] wrote %d bytes", plugin, n)
+  }
 }
