@@ -299,7 +299,15 @@ proto=tcp
 
 #### NamedPipeWriterPlugin
 
-TODO
+Writes messages into named pipe (fifo).
+
+**Example**
+
+<pre>
+[output.NamedPipe]
+debug=true
+filename=/var/run/out.fifo
+</pre>
 
 #### StatsdPlugin
 
