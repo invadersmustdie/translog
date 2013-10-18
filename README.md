@@ -228,14 +228,44 @@ Modifies fields for event.
 Currently supports:
 
   * removing fields by name or pattern
+  * substituting patterns in raw message
 
-**Example**
+**Example: modifying fields**
 
 <pre>
 [filter.ModifyEventFilter]
 debug=true
 field.remove.list=cookie,set-cookie
 field.remove.match=^cache
+
+msg.replace.pattern=foo
+msg.replace.substitute=bar
+</pre>
+
+**Example: modifying raw message**
+
+<pre>
+[filter.ModifyEventFilter]
+debug=true
+msg.replace.pattern=foo
+msg.replace.substitute=bar
+</pre>
+
+
+**Example: modifying raw message with backref**
+
+Inside substitute, $ signs are interpreted as in Expand, so for instance $1 represents the text of the first submatch.
+
+<pre>
+[filter.ModifyEventFilter]
+debug=true
+msg.replace.pattern=foo=([a-z]+)
+msg.replace.substitute=bar=${1}
+</pre>
+
+<pre>
+before: "[2013/10/18 12:01:02] Sed non pharetra leo. Vestibulum aliquet porttitor foo=baz xx"
+after: "[2013/10/18 12:01:02] Sed non pharetra leo. Vestibulum aliquet porttitor bar=baz xx"
 </pre>
 
 ### Output

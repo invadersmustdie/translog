@@ -9,6 +9,8 @@ import (
 type ModifyEventFilter struct {
   removeFields       []string
   removeFieldPattern regexp.Regexp
+  replacePattern     regexp.Regexp
+  replaceSubstitute  string
   debug              bool
 }
 
@@ -39,6 +41,20 @@ func (filter *ModifyEventFilter) Configure(config map[string]string) {
   if config["debug"] == "true" {
     filter.debug = true
   }
+
+  if len(config["msg.replace.pattern"]) > 0 {
+    pattern, err := regexp.Compile(config["msg.replace.pattern"])
+
+    if err != nil {
+      log.Printf("[%T] failed compiling pattern %s (%s)", filter, config["msg.replace.pattern"], err)
+    }
+
+    filter.replacePattern = *pattern
+
+    if len(config["msg.replace.pattern"]) > 0 {
+      filter.replaceSubstitute = config["msg.replace.substitute"]
+    }
+  }
 }
 
 func (filter *ModifyEventFilter) ProcessEvent(e *Event) {
@@ -49,7 +65,7 @@ func (filter *ModifyEventFilter) Modify(e *Event) Event {
   for _, fieldToRemove := range filter.removeFields {
     if len(e.Fields[fieldToRemove]) > 0 {
       if filter.debug {
-        log.Printf("delete %s", fieldToRemove)
+        log.Printf("[%T] delete %s", filter, fieldToRemove)
       }
       delete(e.Fields, fieldToRemove)
     }
@@ -59,10 +75,27 @@ func (filter *ModifyEventFilter) Modify(e *Event) Event {
     for fieldName, _ := range e.Fields {
       if filter.removeFieldPattern.MatchString(fieldName) {
         if filter.debug {
-          log.Printf("[%T] removing field %s", fieldName)
+          log.Printf("[%T] removing field %s", filter, fieldName)
         }
         delete(e.Fields, fieldName)
       }
+    }
+  }
+
+  if len(filter.replacePattern.String()) > 0 {
+    if filter.replacePattern.MatchString(e.RawMessage) {
+      result := filter.replacePattern.ReplaceAllString(e.RawMessage, filter.replaceSubstitute)
+
+      if filter.debug {
+        log.Printf("[%T] message replacement pattern='%s' substitute='%s' before='%s' after='%s'",
+          filter,
+          filter.replacePattern.String(),
+          filter.replaceSubstitute,
+          e.RawMessage,
+          result)
+      }
+
+      e.SetRawMessage(result)
     }
   }
 
