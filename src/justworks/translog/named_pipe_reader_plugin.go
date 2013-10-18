@@ -18,6 +18,8 @@ type NamedPipeReaderPlugin struct {
 }
 
 func (plugin *NamedPipeReaderPlugin) Configure(config map[string]string) {
+  log.Printf("[%T] config %v", plugin, config)
+
   plugin.config = config
 
   if config["debug"] == "true" {
