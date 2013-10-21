@@ -39,7 +39,7 @@ func (plugin *StatsdPlugin) ProcessEvent(e *Event) {
   metrics := plugin.ExtractMetrics(e)
 
   for _, metric := range metrics {
-    m := fmt.Sprintf("%s\n", metric)
+    m := fmt.Sprintf("%s", metric)
 
     if plugin.debug {
       log.Printf("[%T] sending %s", plugin, metric)
