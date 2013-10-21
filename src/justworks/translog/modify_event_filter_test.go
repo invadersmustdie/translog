@@ -75,9 +75,9 @@ func Test_ModifyEventFilter_substitute_simple(t *testing.T) {
 
   filter := new(ModifyEventFilter)
   filter.Configure(map[string]string{
-    "msg.replace.pattern": "fii",
+    "msg.replace.pattern":    "fii",
     "msg.replace.substitute": "",
-    "debug": "true",
+    "debug":                  "true",
   })
 
   new_event := filter.Modify(e)
@@ -92,7 +92,7 @@ func Test_ModifyEventFilter_substitute_simple_no_substitute(t *testing.T) {
   filter := new(ModifyEventFilter)
   filter.Configure(map[string]string{
     "msg.replace.pattern": "fii",
-    "debug": "true",
+    "debug":               "true",
   })
 
   new_event := filter.Modify(e)
@@ -106,9 +106,9 @@ func Test_ModifyEventFilter_substitute_simple_with_replacement(t *testing.T) {
 
   filter := new(ModifyEventFilter)
   filter.Configure(map[string]string{
-    "msg.replace.pattern": "fii",
+    "msg.replace.pattern":    "fii",
     "msg.replace.substitute": "bar",
-    "debug": "true",
+    "debug":                  "true",
   })
 
   new_event := filter.Modify(e)
@@ -122,9 +122,9 @@ func Test_ModifyEventFilter_substitute_simple_with_backref(t *testing.T) {
 
   filter := new(ModifyEventFilter)
   filter.Configure(map[string]string{
-    "msg.replace.pattern": "foo='([a-zA-Z0-9_]+)[^']*'",
+    "msg.replace.pattern":    "foo='([a-zA-Z0-9_]+)[^']*'",
     "msg.replace.substitute": "foo='$1'",
-    "debug": "true",
+    "debug":                  "true",
   })
 
   new_event := filter.Modify(e)
