@@ -1,20 +1,21 @@
 package translog
 
 import (
-  "bufio"
+  "bytes"
   "fmt"
   "io"
   "log"
   "os"
   "strconv"
   "strings"
-  "time"
 )
 
 type NamedPipeReaderPlugin struct {
-  config         map[string]string
-  check_interval int64
-  debug          bool
+  config          map[string]string
+  debug           bool
+  bufsize         int
+  _last_error_msg string
+  _last_error_cnt int
 }
 
 func (plugin *NamedPipeReaderPlugin) Configure(config map[string]string) {
@@ -30,17 +31,40 @@ func (plugin *NamedPipeReaderPlugin) Configure(config map[string]string) {
     log.Fatalf("[%T] ERROR: missing configuration option 'source'", plugin)
   }
 
-  if len(config["check_interval"]) > 0 {
-    check_interval, err := strconv.ParseInt(config["check_interval"], 10, 0)
+  plugin.bufsize = 1024
+  if len(config["bufsize"]) > 0 {
+    val, err := strconv.ParseInt(config["bufsize"], 10, 0)
 
     if err != nil {
-      log.Fatalf("[%T] failed reading check_interval. using fallback (%s)", plugin, err)
+      log.Fatalf("[%T] failed reading bufsize. using fallback (%s)", plugin, 1024)
     }
 
-    plugin.check_interval = check_interval
-  } else {
-    log.Printf("[%T] no option 'check_interval' set. using fallback '2'", plugin)
-    plugin.check_interval = 2
+    plugin.bufsize = int(val)
+  }
+}
+
+// TODO: extract into common function
+func (plugin *NamedPipeReaderPlugin) logError2(stage string, err string) {
+  err_s := fmt.Sprintf("%s|%s", stage, err)
+
+  if plugin._last_error_msg != err_s {
+    plugin._last_error_msg = err_s
+    plugin._last_error_cnt = 0
+  }
+
+  plugin._last_error_cnt += 1
+
+  if plugin._last_error_cnt == 1 || plugin._last_error_cnt >= ERROR_OCCUR_LIMIT {
+    log.Printf("[%T] stage='%s' source='%s' err='%s' occurence=%d",
+      plugin,
+      stage,
+      plugin.config["source"],
+      err,
+      plugin._last_error_cnt)
+  }
+
+  if plugin._last_error_cnt >= ERROR_OCCUR_LIMIT {
+    plugin._last_error_cnt = 1
   }
 }
 
@@ -51,40 +75,34 @@ func (plugin *NamedPipeReaderPlugin) Start(c chan *Event) {
   pipe, err := os.OpenFile(config["source"], os.O_RDONLY, 0600)
 
   if err != nil {
-    log.Printf("[%T] failed to open named pipe %s", plugin, config["source"])
+    plugin.logError2("openFile", err.Error())
     return
   }
 
-  stdin_buf := bufio.NewReader(pipe)
+  buf := bytes.NewBufferString("")
 
   for {
-    line_in, hasMore, err := stdin_buf.ReadLine()
+    rbuf := make([]byte, plugin.bufsize)
+    _, err = pipe.Read(rbuf)
 
-    if err == io.EOF {
-      if plugin.debug {
-        log.Printf("[%T] found EOF", plugin)
+    if err != io.EOF {
+      for _, char := range rbuf {
+        if char != '\n' {
+          buf.WriteByte(char)
+        } else {
+          if len(strings.TrimSpace(buf.String())) > 0 {
+            event := CreateEvent(source)
+            event.SetRawMessage(buf.String())
+
+            c <- event
+            buf.Reset()
+          }
+        }
       }
 
-      time.Sleep(time.Duration(plugin.check_interval) * time.Second)
-      continue
-    }
-
-    if err != nil {
-      log.Println(err)
-      return
-    }
-
-    if hasMore {
-      log.Println("[%T] Error: input line too long", plugin)
-      return
-    }
-
-    str := strings.TrimSpace(string(line_in))
-    if string(str) != "" {
-      e := CreateEvent(source)
-      e.SetRawMessage(str)
-
-      c <- e
+      if err != nil {
+        plugin.logError2("write", err.Error())
+      }
     }
   }
 }

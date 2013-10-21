@@ -33,6 +33,7 @@ func (plugin *FileReaderPlugin) Configure(config map[string]string) {
   plugin.rescan_interval = 2
 }
 
+// TODO: extract into common function
 func (plugin *FileReaderPlugin) logError2(stage string, err string) {
   err_s := fmt.Sprintf("%s|%s", stage, err)
 
@@ -44,7 +45,7 @@ func (plugin *FileReaderPlugin) logError2(stage string, err string) {
   plugin._last_error_cnt += 1
 
   if plugin._last_error_cnt == 1 || plugin._last_error_cnt >= ERROR_OCCUR_LIMIT {
-    log.Printf("2 [%T] stage='%s' source='%s' err='%s' occurence=%d",
+    log.Printf("[%T] stage='%s' source='%s' err='%s' occurence=%d",
       plugin,
       stage,
       plugin.config["source"],
