@@ -2,12 +2,12 @@ package translog
 
 import (
   "bufio"
+  "bytes"
   "fmt"
   "log"
   "net"
-  "bytes"
-  "time"
   "strconv"
+  "time"
 )
 
 type NetworkSocketWriter struct {
@@ -62,7 +62,7 @@ func (plugin *NetworkSocketWriter) Configure(config map[string]string) {
 }
 
 func (plugin *NetworkSocketWriter) ProcessEvent(event *Event) {
-  plugin.WriteString(event.RawMessage)
+  plugin.WriteString(fmt.Sprintf("%s\r\n", event.RawMessage))
 }
 
 func (plugin *NetworkSocketWriter) initializePool() {
@@ -73,7 +73,7 @@ func (plugin *NetworkSocketWriter) initializePool() {
   dial_timeout := 1 * time.Second
   plugin.pool = make(chan *net.Conn, plugin.pool_size)
 
-  for i := 0; i<= plugin.pool_size; i++ {
+  for i := 0; i <= plugin.pool_size; i++ {
     conn, err := net.DialTimeout(plugin.proto, plugin.peer, dial_timeout)
 
     if err != nil {
@@ -88,15 +88,15 @@ func (plugin *NetworkSocketWriter) getConnection() *net.Conn {
   plugin.initializePool()
 
   if plugin.debug {
-    log.Printf("[%T] getConnection", plugin)
+    log.Printf("[%s > %T] getConnection", plugin.Caller, plugin)
   }
 
-  return <- plugin.pool
+  return <-plugin.pool
 }
 
 func (plugin *NetworkSocketWriter) releaseConnection(conn *net.Conn) {
   if plugin.debug {
-    log.Printf("[%T] releaseConnection", plugin)
+    log.Printf("[%s > %T] releaseConnection", plugin.Caller, plugin)
   }
 
   plugin.pool <- conn
@@ -107,7 +107,7 @@ func (plugin *NetworkSocketWriter) WriteString(data string) {
   defer plugin.releaseConnection(conn)
 
   if plugin.debug {
-    log.Printf("[%T] conn=%s WriteString('%s')", plugin, conn, data)
+    log.Printf("[%s > %T] conn=%s WriteString('%s')", plugin.Caller, plugin, conn, data)
   }
 
   writer := bufio.NewWriter(*conn)
@@ -120,8 +120,21 @@ func (plugin *NetworkSocketWriter) WriteBytes(data bytes.Buffer) {
   defer plugin.releaseConnection(conn)
 
   if plugin.debug {
-    log.Printf("[%T] conn=%s WriteBytes size=%d", plugin, conn, data.Len())
+    log.Printf("[%s > %T] conn=%s WriteBytes size=%d string='%x'",
+      plugin.Caller,
+      plugin,
+      conn,
+      data.Len(),
+      data.Bytes())
   }
 
-  (*conn).Write(data.Bytes())
+  n, err := (*conn).Write(data.Bytes())
+
+  if err != nil {
+    log.Printf("[%s > %T] WriteBytes failed (err=%s)", plugin.Caller, plugin, err)
+  }
+
+  if plugin.debug {
+    log.Printf("[%s > %T] WriteBytes completed (size=%d)", plugin.Caller, plugin, n)
+  }
 }
