@@ -120,7 +120,7 @@ func (plugin *NetworkSocketWriter) WriteBytes(data bytes.Buffer) {
   defer plugin.releaseConnection(conn)
 
   if plugin.debug {
-    log.Printf("[%T] conn=%s WriteBytes('%s')", plugin, conn, data.String())
+    log.Printf("[%T] conn=%s WriteBytes size=%d", plugin, conn, data.Len())
   }
 
   (*conn).Write(data.Bytes())
