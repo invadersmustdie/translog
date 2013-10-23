@@ -1,21 +1,22 @@
 package translog
 
 import (
+  "bytes"
+  "compress/zlib"
   "encoding/json"
   "fmt"
   "log"
   "net"
-  "compress/zlib"
-  "bytes"
 )
 
 type GelfWriterPlugin struct {
-  config       map[string]string
-  socketWriter NetworkSocketWriter
-  conn         net.Conn
-  peer         string
-  proto        string
-  debug        bool
+  config          map[string]string
+  socketWriter    NetworkSocketWriter
+  conn            net.Conn
+  peer            string
+  compressMessage bool
+  proto           string
+  debug           bool
 }
 
 type GelfMessage struct {
@@ -25,6 +26,16 @@ type GelfMessage struct {
 
 func (plugin *GelfWriterPlugin) Configure(config map[string]string) {
   plugin.config = config
+
+  if len(config["proto"]) > 0 && config["proto"] == "tcp" {
+    log.Printf("[%T] GELF+TCP only supported uncompressed mode", plugin)
+    plugin.compressMessage = false
+  }
+
+  if len(config["proto"]) > 0 && config["proto"] == "udp" {
+    log.Printf("[%T] GELF+UDP enabled message compression", plugin)
+    plugin.compressMessage = true
+  }
 
   w := CreateNetworkSocketWriter(plugin, config)
   plugin.socketWriter = w
@@ -36,7 +47,12 @@ func (plugin *GelfWriterPlugin) Configure(config map[string]string) {
 
 func (plugin *GelfWriterPlugin) ProcessEvent(event *Event) {
   gelfMessage := plugin.CreateGelfMessage(event)
-  plugin.socketWriter.WriteBytes(plugin.CompressMessage(gelfMessage.GelfStr))
+
+  if plugin.compressMessage {
+    plugin.socketWriter.WriteBytes(plugin.CompressMessage(gelfMessage.GelfStr))
+  } else {
+    plugin.socketWriter.WriteString(gelfMessage.GelfStr)
+  }
 }
 
 func (plugin *GelfWriterPlugin) CompressMessage(msg string) bytes.Buffer {
