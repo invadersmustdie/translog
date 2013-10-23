@@ -7,6 +7,8 @@ import (
   "fmt"
   "log"
   "net"
+  "regexp"
+  "strconv"
 )
 
 type GelfWriterPlugin struct {
@@ -15,6 +17,7 @@ type GelfWriterPlugin struct {
   conn            net.Conn
   peer            string
   compressMessage bool
+  autoDiscovery   bool
   proto           string
   debug           bool
 }
@@ -23,6 +26,8 @@ type GelfMessage struct {
   Event   *Event
   GelfStr string
 }
+
+var autodiscovery_patterns = make(map[string]*regexp.Regexp)
 
 func (plugin *GelfWriterPlugin) Configure(config map[string]string) {
   plugin.config = config
@@ -35,6 +40,13 @@ func (plugin *GelfWriterPlugin) Configure(config map[string]string) {
   if len(config["proto"]) > 0 && config["proto"] == "udp" {
     log.Printf("[%T] GELF+UDP enabled message compression", plugin)
     plugin.compressMessage = true
+  }
+
+  plugin.autoDiscovery = false
+
+  if len(config["autodiscovery"]) > 0 && config["autodiscovery"] == "true" {
+    plugin.autoDiscovery = true
+    plugin.precompileRegexpPatterns()
   }
 
   w := CreateNetworkSocketWriter(plugin, config)
@@ -53,6 +65,13 @@ func (plugin *GelfWriterPlugin) ProcessEvent(event *Event) {
   } else {
     plugin.socketWriter.WriteString(gelfMessage.GelfStr)
   }
+}
+
+func (plugin *GelfWriterPlugin) precompileRegexpPatterns() {
+  log.Printf("[%T] precompiling autodiscovery patterns", plugin)
+
+  v, _ := regexp.Compile(`^\d+$`)
+  autodiscovery_patterns["INTEGER"] = v
 }
 
 func (plugin *GelfWriterPlugin) CompressMessage(msg string) bytes.Buffer {
@@ -76,8 +95,15 @@ func (plugin *GelfWriterPlugin) CreateGelfMessage(event *Event) *GelfMessage {
     "short_message": event.RawMessage,
   }
 
+  ad := plugin.autoDiscovery
+
   for k, v := range event.Fields {
-    gelfFields[fmt.Sprintf("_%s", k)] = v
+    if ad && autodiscovery_patterns["INTEGER"].MatchString(v) {
+      val, _ := strconv.ParseInt(v, 10, 0)
+      gelfFields[fmt.Sprintf("_%s", k)] = val
+    } else {
+      gelfFields[fmt.Sprintf("_%s", k)] = v
+    }
   }
 
   jsonMsg, err := json.Marshal(gelfFields)
