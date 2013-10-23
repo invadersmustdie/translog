@@ -5,6 +5,8 @@ import (
   "fmt"
   "log"
   "net"
+  "compress/zlib"
+  "bytes"
 )
 
 type GelfWriterPlugin struct {
@@ -34,7 +36,17 @@ func (plugin *GelfWriterPlugin) Configure(config map[string]string) {
 
 func (plugin *GelfWriterPlugin) ProcessEvent(event *Event) {
   gelfMessage := plugin.CreateGelfMessage(event)
-  plugin.socketWriter.WriteString(gelfMessage.GelfStr)
+  plugin.socketWriter.WriteBytes(plugin.CompressMessage(gelfMessage.GelfStr))
+}
+
+func (plugin *GelfWriterPlugin) CompressMessage(msg string) bytes.Buffer {
+  var buf bytes.Buffer
+
+  w := zlib.NewWriter(&buf)
+  w.Write([]byte(msg))
+  w.Close()
+
+  return buf
 }
 
 func (plugin *GelfWriterPlugin) CreateGelfMessage(event *Event) *GelfMessage {
