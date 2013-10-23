@@ -5,6 +5,9 @@ import (
   "fmt"
   "log"
   "net"
+  "bytes"
+  "time"
+  "strconv"
 )
 
 type NetworkSocketWriter struct {
@@ -15,6 +18,8 @@ type NetworkSocketWriter struct {
   proto                    string
   Caller                   string
   debug                    bool
+  pool                     chan *net.Conn
+  pool_size                int
 }
 
 func CreateNetworkSocketWriter(caller interface{}, config map[string]string) NetworkSocketWriter {
@@ -43,79 +48,80 @@ func (plugin *NetworkSocketWriter) Configure(config map[string]string) {
   } else {
     plugin.proto = config["proto"]
   }
+
+  plugin.pool_size = 5
+  if len(config["pool_size"]) > 0 {
+    val, err := strconv.ParseInt(config["pool_size"], 10, 0)
+
+    if err != nil {
+      log.Fatalf("[%s > %T] Invalid value for option 'pool_size'", plugin.Caller, plugin)
+    }
+
+    plugin.pool_size = int(val)
+  }
 }
 
 func (plugin *NetworkSocketWriter) ProcessEvent(event *Event) {
   plugin.WriteString(event.RawMessage)
 }
 
-func (plugin *NetworkSocketWriter) WriteString(data string) {
-  if plugin.usePersistentConnections {
-    if plugin.debug {
-      log.Printf("[%s > %T] Using persistent connection", plugin.Caller, plugin)
-    }
-
-    /* NOTE: still work in progress */
-    plugin.WriteStringToConnnectionPool(data)
-  } else {
-    if plugin.debug {
-      log.Printf("[%s > %T] Using single shot connection", plugin.Caller, plugin)
-    }
-
-    plugin.WriteStringSingleShot(data)
-  }
-}
-
-func (plugin *NetworkSocketWriter) WriteStringSingleShot(data string) {
-  if plugin.debug {
-    log.Printf("[%s > %T] Establishing connection to %s", plugin.Caller, plugin, plugin.peer)
-  }
-
-  conn, err := net.Dial(plugin.proto, plugin.peer)
-
-  if err != nil {
-    log.Printf("[%s > %T] Failed opening %s://%s (%s)", plugin.Caller, plugin, plugin.proto, plugin.peer, err)
+func (plugin *NetworkSocketWriter) initializePool() {
+  if plugin.pool != nil {
     return
   }
 
-  if plugin.debug {
-    log.Printf("[%s > %T] Writing to '%s' %s", plugin.Caller, plugin, data, plugin.peer)
-  }
+  dial_timeout := 1 * time.Second
+  plugin.pool = make(chan *net.Conn, plugin.pool_size)
 
-  writer := bufio.NewWriter(conn)
-  writer.WriteString(data)
-  writer.Flush()
-
-  defer conn.Close()
-}
-
-func (plugin *NetworkSocketWriter) WriteStringToConnnectionPool(data string) {
-  if plugin.conn == nil {
-    if plugin.debug {
-      log.Printf("[%s > %T] Establishing connection to %s", plugin.Caller, plugin, plugin.peer)
-    }
-
-    conn, err := net.Dial(plugin.proto, plugin.peer)
-    plugin.conn = conn
+  for i := 0; i<= plugin.pool_size; i++ {
+    conn, err := net.DialTimeout(plugin.proto, plugin.peer, dial_timeout)
 
     if err != nil {
       log.Printf("[%s > %T] Failed opening %s://%s (%s)", plugin.Caller, plugin, plugin.proto, plugin.peer, err)
-    }
-  } else {
-    if plugin.debug {
-      log.Printf("[%s > %T] Reusing connection %s://%s", plugin.Caller, plugin, plugin.proto, plugin.peer)
+    } else {
+      plugin.pool <- &conn
     }
   }
+}
 
-  if plugin.conn != nil {
-    if plugin.debug {
-      log.Printf("[%s > %T] Writing to '%s' %s", plugin.Caller, plugin, data, plugin.peer)
-    }
+func (plugin *NetworkSocketWriter) getConnection() *net.Conn {
+  plugin.initializePool()
 
-    writer := bufio.NewWriter(plugin.conn)
-    writer.WriteString(data)
-    writer.Flush()
-  } else {
-    log.Printf("[%s > %T] ERROR: no available connection found", plugin.Caller, plugin)
+  if plugin.debug {
+    log.Printf("[%T] getConnection", plugin)
   }
+
+  return <- plugin.pool
+}
+
+func (plugin *NetworkSocketWriter) releaseConnection(conn *net.Conn) {
+  if plugin.debug {
+    log.Printf("[%T] releaseConnection", plugin)
+  }
+
+  plugin.pool <- conn
+}
+
+func (plugin *NetworkSocketWriter) WriteString(data string) {
+  conn := plugin.getConnection()
+  defer plugin.releaseConnection(conn)
+
+  if plugin.debug {
+    log.Printf("[%T] conn=%s WriteString('%s')", plugin, conn, data)
+  }
+
+  writer := bufio.NewWriter(*conn)
+  writer.WriteString(data)
+  writer.Flush()
+}
+
+func (plugin *NetworkSocketWriter) WriteBytes(data bytes.Buffer) {
+  conn := plugin.getConnection()
+  defer plugin.releaseConnection(conn)
+
+  if plugin.debug {
+    log.Printf("[%T] conn=%s WriteBytes('%s')", plugin, conn, data.String())
+  }
+
+  (*conn).Write(data.Bytes())
 }
