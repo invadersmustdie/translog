@@ -8,12 +8,15 @@ import (
   "os"
   "strconv"
   "strings"
+  "time"
+  "syscall"
 )
 
 type NamedPipeReaderPlugin struct {
   config          map[string]string
   debug           bool
   bufsize         int
+  poll_interval   int
   _last_error_msg string
   _last_error_cnt int
 }
@@ -41,6 +44,8 @@ func (plugin *NamedPipeReaderPlugin) Configure(config map[string]string) {
 
     plugin.bufsize = int(val)
   }
+
+  plugin.poll_interval = 1
 }
 
 // TODO: extract into common function
@@ -79,13 +84,17 @@ func (plugin *NamedPipeReaderPlugin) Start(c chan *Event) {
     return
   }
 
+  if err = syscall.SetNonblock(int(pipe.Fd()), true); err != nil {
+    log.Printf("[%T] Failed opening file in NONBLOCKING mode (err='%s')", err.Error())
+  }
+
   buf := bytes.NewBufferString("")
 
   for {
     rbuf := make([]byte, plugin.bufsize)
-    _, err = pipe.Read(rbuf)
+    n, err := pipe.Read(rbuf)
 
-    if err != io.EOF {
+    if n != 0 && err == nil {
       for _, char := range rbuf {
         if char != '\n' {
           buf.WriteByte(char)
@@ -99,10 +108,14 @@ func (plugin *NamedPipeReaderPlugin) Start(c chan *Event) {
           }
         }
       }
+    }
 
-      if err != nil {
-        plugin.logError2("write", err.Error())
-      }
+    if n == 0 && err != nil && err != io.EOF {
+      plugin.logError2("write", err.Error())
+    }
+
+    if n == 0 || err == io.EOF {
+      time.Sleep(time.Duration(plugin.poll_interval) * time.Second)
     }
   }
 }
