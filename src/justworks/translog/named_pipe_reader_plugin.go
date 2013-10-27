@@ -174,7 +174,11 @@ func (plugin *NamedPipeReaderPlugin) Start(c chan *Event) {
       }
 
       if n == 0 && err != nil && err != io.EOF {
-        plugin.logError2("write", err.Error())
+        patherr := err.(*os.PathError)
+
+        if !(patherr != nil && patherr.Err.Error() == "resource temporarily unavailable") {
+          plugin.logError2("write", err.Error())
+        }
       }
 
       if n == 0 || err == io.EOF {
