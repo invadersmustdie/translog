@@ -97,7 +97,7 @@ func (plugin *NamedPipeWriterPlugin) ProcessEvent(event *Event) {
   if err != nil {
     if os.IsNotExist(err) {
       log.Printf("[%T] creating named pipe %s", plugin, config["filename"])
-      syscall.Mkfifo(config["filename"], 0600)
+      syscall.Mkfifo(config["filename"], 0644)
 
       stat, err = os.Stat(config["filename"])
 
@@ -109,7 +109,7 @@ func (plugin *NamedPipeWriterPlugin) ProcessEvent(event *Event) {
     }
   }
 
-  pipe, err = os.OpenFile(config["filename"], os.O_WRONLY, 0600)
+  pipe, err = os.OpenFile(config["filename"], os.O_WRONLY, 0644)
 
   if (stat.Mode() & os.ModeNamedPipe) != os.ModeNamedPipe {
     log.Fatalf("[%T] %s is not a named pipe (stat.Mode=%s)", plugin, config["filename"], stat.Mode())
