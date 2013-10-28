@@ -11,12 +11,20 @@ type ModifyEventFilter struct {
   removeFieldPattern regexp.Regexp
   replacePattern     regexp.Regexp
   replaceSubstitute  string
+  additionalFields   map[string]string
   debug              bool
 }
 
 func (filter *ModifyEventFilter) Configure(config map[string]string) {
   log.Printf("[%T] config %v", filter, config)
 
+  filter.additionalFields = make(map[string]string)
+
+  if config["debug"] == "true" {
+    filter.debug = true
+  }
+
+  /* field.remove.list */
   if len(config["field.remove.list"]) > 0 {
     fields := strings.Split(config["field.remove.list"], ",")
 
@@ -26,6 +34,18 @@ func (filter *ModifyEventFilter) Configure(config map[string]string) {
     }
   }
 
+  /* field.add */
+  for k, v := range config {
+    if strings.HasPrefix(k, "field.add.") {
+      field := k[(strings.LastIndex(k, ".")+1):]
+
+      if len(field) > 0 {
+        filter.additionalFields[field] = v
+      }
+    }
+  }
+
+  /* field.remove.match */
   removeFieldPattern := config["field.remove.match"]
 
   if len(removeFieldPattern) > 0 {
@@ -38,10 +58,7 @@ func (filter *ModifyEventFilter) Configure(config map[string]string) {
     filter.removeFieldPattern = *pattern
   }
 
-  if config["debug"] == "true" {
-    filter.debug = true
-  }
-
+  /* msg.replace.pattern */
   if len(config["msg.replace.pattern"]) > 0 {
     pattern, err := regexp.Compile(config["msg.replace.pattern"])
 
@@ -96,6 +113,16 @@ func (filter *ModifyEventFilter) Modify(e *Event) Event {
       }
 
       e.SetRawMessage(result)
+    }
+  }
+
+  for k,v := range filter.additionalFields {
+    if len(e.Fields[k]) == 0 {
+      if filter.debug {
+        log.Printf("[%T] adding field='%s' value='%s'", k, v)
+      }
+
+      e.Fields[k] = v
     }
   }
 

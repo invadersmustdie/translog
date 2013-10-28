@@ -131,3 +131,33 @@ func Test_ModifyEventFilter_substitute_simple_with_backref(t *testing.T) {
 
   assert.Equal(t, "[xasd] foo='my_value002002' bla='baz'", new_event.RawMessage)
 }
+
+func Test_ModifyEventFilter_add_field(t *testing.T) {
+  e := CreateEvent("test")
+  e.SetRawMessage("")
+
+  filter := new(ModifyEventFilter)
+  filter.Configure(map[string]string{
+    "field.add.foo":    "bar",
+  })
+
+  new_event := filter.Modify(e)
+
+  assert.Equal(t, "bar", new_event.Fields["foo"])
+}
+
+func Test_ModifyEventFilter_add_field_should_not_overwrite_existing_field(t *testing.T) {
+  e := CreateEvent("test")
+  e.SetRawMessage("")
+
+  e.Fields["foo"] = "lala"
+
+  filter := new(ModifyEventFilter)
+  filter.Configure(map[string]string{
+    "field.add.foo":    "bar",
+  })
+
+  new_event := filter.Modify(e)
+
+  assert.Equal(t, "lala", new_event.Fields["foo"])
+}
